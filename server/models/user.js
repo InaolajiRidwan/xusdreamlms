@@ -8,13 +8,23 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
       lowercase: true,
+      trim: true,
     },
     password: {
       type: String,
       required: true,
     },
+
     role: { type: String, enum: ["admin", "student"], default: "student" },
-    avatar: { type: String },
+
+    isEmailVerified: { type: Boolean, default: false },
+    refreshToken: String,
+
+    emailVerificationToken: String,
+    emailVerificationExpires: Date,
+
+    resetPasswordToken: String,
+    resetPasswordExpires: Date,
   },
   { timestamps: true }
 );
