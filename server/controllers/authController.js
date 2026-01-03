@@ -11,7 +11,7 @@ const transporter = createTransporter();
 
 export const register = async (req, res) => {
   try {
-    const { fullName, email, password } = req.body;
+    const { fullName, email, password, profilePicture } = req.body;
     if (!fullName || !email || !password) {
       return res.status(400).json({
         message: "All field is required",
@@ -46,6 +46,7 @@ export const register = async (req, res) => {
       password: hashPassword,
       emailVerificationToken: emailToken,
       emailVerificationExpires: Date.now() + 3600000,
+      profilePicture: profilePicture || "",
     });
 
     await newUser.save();
@@ -145,6 +146,7 @@ export const register = async (req, res) => {
         name: newUser.fullName,
         email: newUser.email,
         role: newUser.role,
+        profilePicture: newUser.profilePicture,
       },
     });
   } catch (error) {
@@ -157,8 +159,9 @@ export const register = async (req, res) => {
 
 export const verifyEmail = async (req, res) => {
   try {
+    const { token } = req.params;
     const user = await User.findOne({
-      emailVerificationToken: req.params.token,
+      emailVerificationToken: token,
       emailVerificationExpires: { $gt: Date.now() },
     });
 
@@ -346,6 +349,7 @@ export const login = async (req, res) => {
       fullName: user.fullName,
       email: user.email,
       role: user.role,
+      profilePicture: user.profilePicture || "",
     });
   } catch (error) {
     console.log(error);
@@ -356,49 +360,61 @@ export const login = async (req, res) => {
 };
 
 export const refreshToken = async (req, res) => {
-  const token = req.cookies.refreshToken;
-  if (!token) return res.sendStatus(401);
+  try {
+    const token = req.cookies.refreshToken;
+    if (!token) return res.sendStatus(401);
 
-  const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-  const user = await User.findById(payload.userId);
-  if (!user || user.refreshToken !== token) return res.sendStatus(403);
-  const newAcessToken = generateAccessToken(user._id);
-  res.json({
-    accessToken: newAcessToken,
-  });
+    const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    const user = await User.findById(payload.userId);
+    if (!user || user.refreshToken !== token) return res.sendStatus(403);
+    const newAcessToken = generateAccessToken(user._id);
+    res.json({
+      accessToken: newAcessToken,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
 };
 
 export const logout = async (req, res) => {
-  res.clearCookie("refreshToken");
-  res.json({
-    message: "Logged Out",
-  });
+  try {
+    res.clearCookie("refreshToken");
+    res.json({
+      message: "Logged Out",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
 };
 
 export const forgotPassword = async (req, res) => {
-  const { email } = req.body;
-  const user = await User.findOne({ email });
-  if (!user) {
-    return res
-      .status(200)
-      .json({
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(200).json({
         message:
           "If an account with that email exists, a reset link has been sent.",
       });
-  }
+    }
 
-  const token = crypto.randomBytes(32).toString("hex");
-  (user.resetPasswordToken = token),
-    (user.resetPasswordExpires = Date.now() + 3600000);
-  await user.save();
+    const token = crypto.randomBytes(32).toString("hex");
+    (user.resetPasswordToken = token),
+      (user.resetPasswordExpires = Date.now() + 3600000);
+    await user.save();
 
-  const link = `${process.env.CLIENT_URL}/reset-password/${token}`;
+    const link = `${process.env.CLIENT_URL}/reset-password/${token}`;
 
- 
-  await transporter.sendMail({
-  to: email,
-  subject: "Reset Your Password",
-  html: `
+    await transporter.sendMail({
+      to: email,
+      subject: "Reset Your Password",
+      html: `
   <!DOCTYPE html>
   <html lang="en">
   <head>
@@ -487,46 +503,46 @@ export const forgotPassword = async (req, res) => {
     </div>
   </body>
   </html>
-  `
-});
+  `,
+    });
 
-
-  res.status(200).json({
-    message: "Reset link sent",
-  });
-};
-
-
-
-
-
-export const resetPassword = async (req, res) => {
-  const user = await User.findOne({
-    resetPasswordToken: req.params.token,
-    resetPasswordExpires: { $gt: Date.now() },
-  });
-
-  if (!user) {
-    return res.status(400).json({
-      message: "Inavlid Token",
+    res.status(200).json({
+      message: "Reset link sent",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Internal Server Error",
     });
   }
-
-  user.password = await bcrypt.hash(req.body.password, 10);
-  user.resetPasswordToken = null;
-  await user.save();
-  res.status(200).json({
-    message: "Password reset successful",
-  });
 };
 
+export const resetPassword = async (req, res) => {
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: req.params.token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
 
+    if (!user) {
+      return res.status(400).json({
+        message: "Inavlid Token",
+      });
+    }
 
-
-
-
-
-
+    user.password = await bcrypt.hash(req.body.password, 10);
+    user.resetPasswordToken = null;
+    await user.save();
+    res.status(200).json({
+      message: "Password reset successful",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
+};
 
 
 

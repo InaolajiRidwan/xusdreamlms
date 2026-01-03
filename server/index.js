@@ -6,6 +6,7 @@ import cors from "cors";
 import connectDb from "./config/db.js";
 import courseRoutes from "./routes/courseRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js"
 import chapterRoutes from "./routes/chapterRoutes.js";
 
 // ... imports ...
@@ -18,8 +19,10 @@ app.use(cookieParser());
 
 // 1. DEFINE ROUTES FIRST
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/users", userRoutes)
 app.use("/api/v1/courses", courseRoutes);
 app.use("/api/v1/chapter", chapterRoutes);
+
 
 // 2. START SERVER LAST
 const PORT = process.env.PORT || 5000;
