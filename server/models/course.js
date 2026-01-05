@@ -6,9 +6,9 @@ const CourseSchema = new mongoose.Schema(
 
     description: { type: String, required: true },
 
-    price: { type: Number, default: 0 },
+    price: { type: Number, default: 0, min: 0 },
 
-    thumbnail: String,
+    thumbnail: { type: String, default: "default-thumbnail.jpg"}, 
 
     chapters: [{ type: mongoose.Schema.Types.ObjectId, ref: "Chapter" }],
 

@@ -34,6 +34,15 @@ router.get(
   authorizeRole("admin", "student"),
   getAllCourse
 );
+
+
+
+
+
+
+
+
+
 router.get(
   "/one-course/:id",
   verifyToken,

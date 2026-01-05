@@ -1,7 +1,10 @@
 import bcrypt from "bcryptjs";
 import { createTransporter } from "../config/mail.js";
+import User from "../models/user.js";
 
 const transport = createTransporter();
+
+//student
 
 export const getMe = async (req, res) => {
   try {
@@ -93,6 +96,176 @@ export const updatePassword = async (req, res) => {
     console.error(error);
     res.status(500).json({
       message: "Internal Server Error",
+    });
+  }
+};
+
+//admin
+
+export const getAllUsers = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin priviledge required",
+      });
+    }
+    const allUsers = await User.find();
+    res.status(200).json({
+      success: true,
+      message: "all user sucessfully fetch",
+      count: allUsers.length,
+      users: allUsers,
+    });
+  } catch (error) {
+    console.error("Get all user error", error);
+    res.status(500).json({
+      success: false,
+      message: "Server fetching users",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
+export const getOneUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin priviledge required",
+      });
+    }
+
+    const userData = await User.findById(id).select(
+      "-password -resetPassowrdToken -refreshToken"
+    );
+
+    if (!userData) {
+      return res.status(400).json({
+        success: false,
+        message: "user not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      data: userData,
+    });
+  } catch (error) {
+    console.error("Getting user", error);
+    res.status(500).json({
+      success: false,
+      message: "Server fetching user",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
+export const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    if (!req.user) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Authentication Required",
+      });
+    }
+
+    if (req.user.role !== "admin") {
+      return res.status(400).json({
+        success: false,
+        message: "Access denied. Admin privileges required.",
+      });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(id, updates, {
+      new: true,
+      runValidators: true,
+    }).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("update user", error);
+    res.status(500).json({
+      success: false,
+      message: "update user error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
+export const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+  
+
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin privileges required.",
+      });
+    }
+
+    const user = await User.findById(id);
+
+    const deletedUser = await User.findByIdAndDelete(id, {
+      isActive: false,
+      deletedAt: new Date(),
+      email: `${user.email}_deleted_${Date.now()}`,
+    });
+
+    if (!deletedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User deactivated successfully",
+      user: deletedUser,
+    });
+  } catch (error) {
+    console.error("deleting  user", error);
+    res.status(500).json({
+      success: false,
+      message: "deleting user error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };

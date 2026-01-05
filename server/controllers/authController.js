@@ -139,6 +139,11 @@ export const register = async (req, res) => {
   `,
     });
 
+
+
+
+
+
     res.status(201).json({
       message: "user register successfully & verification email sent",
       user: {
@@ -150,12 +155,19 @@ export const register = async (req, res) => {
       },
     });
   } catch (error) {
-    console.log(`Registration Error ${error}`);
+    console.error("sign-up error:", error);
     res.status(500).json({
-      message: "Internal Server Error",
+      success: false,
+      message: "Server error signing up",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
+
+
+
+
+
 
 export const verifyEmail = async (req, res) => {
   try {
@@ -180,32 +192,45 @@ export const verifyEmail = async (req, res) => {
       message: "Email verified",
     });
   } catch (error) {
-    console.log(error);
+    console.error("verify email error:", error);
     res.status(500).json({
-      message: "Internal Server Error",
+      success: false,
+      message: "Server error sending verify email",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
 
+
+
+
+
+
+
+
+
+
 export const resendVerification = async (req, res) => {
-  const { email } = req.body;
-  const user = await User.findOne({ email });
-  if (!user || user.isEmailVerified) {
-    return res.status(400).json({
-      message: "Invalid Request",
-    });
-  }
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user || user.isEmailVerified) {
+      return res.status(400).json({
+        message: "Invalid Request",
+      });
+    }
 
-  const token = crypto.randomBytes(32).toString("hex");
-  user.emailVerificationToken = token;
-  user.emailVerificationExpires = Date.now() + 3600000;
-  await user.save();
 
-  const link = `${process.env.CLIENT_URL}/verify-email/${token}`;
-  await transporter.sendMail({
-    to: email,
-    subject: "Verify Your Email",
-    html: `
+    const token = crypto.randomBytes(32).toString("hex");
+    user.emailVerificationToken = token;
+    user.emailVerificationExpires = Date.now() + 3600000;
+    await user.save();
+
+    const link = `${process.env.CLIENT_URL}/verify-email/${token}`;
+    await transporter.sendMail({
+      to: email,
+      subject: "Verify Your Email",
+      html: `
   <!DOCTYPE html>
   <html lang="en">
   <head>
@@ -286,12 +311,25 @@ export const resendVerification = async (req, res) => {
   </body>
   </html>
   `,
-  });
+    });
 
-  res.status(200).json({
-    message: "Verification email sent",
-  });
+    res.status(200).json({
+      message: "Verification email sent",
+    });
+  } catch (error) {
+    console.error("Resend verification error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error Resending verification",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
 };
+
+
+
+
+
 
 export const login = async (req, res) => {
   try {
@@ -335,6 +373,86 @@ export const login = async (req, res) => {
 
     await user.save();
 
+    await transporter.sendMail({
+      to: user.email,
+      subject: "you're successfully logged in", 
+     html: `
+        <!DOCTYPE html>
+          <html lang="en">
+          <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Verify Your Email</title>
+          <style>
+            body {
+              font-family: 'Arial', sans-serif;
+               background-color: #f4f6f8;
+              margin: 0;
+              padding: 0;
+            } 
+            .container {
+              max-width: 600px;
+            margin: 40px auto;
+             background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            }
+          .header {
+            background-color: #4f46e5;
+            color: white;
+        padding: 20px;
+        text-align: center;
+      }
+      .content {
+        padding: 30px 20px;
+        color: #333333;
+        line-height: 1.5;
+      }
+      .button {
+        display: inline-block;
+        padding: 12px 25px;
+        margin: 20px 0;
+        background-color: #4f46e5;
+        color: white !important;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+      }
+      .footer {
+        background-color: #f4f6f8;
+        color: #888888;
+        font-size: 12px;
+        text-align: center;
+        padding: 15px;
+      }
+      a {
+        color: #4f46e5;
+      }
+
+      span {
+      color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h2>Welcome to Our XUSDREAMLMS!</h2>
+      </div>
+      <div class="content">
+        <p>Hi ${user.fullName},</p>
+        <p>You're successfully logged in <span >XUSDREAMLMS</span>:</p>
+      </div>
+      <div class="footer">
+        &copy; ${new Date().getFullYear()} <span>XUSDREAMLMS</span>. All rights reserved.
+      </div>
+    </div>
+  </body>
+  </html>
+  `,
+    })
+
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // HTTPS only in prod
@@ -352,9 +470,11 @@ export const login = async (req, res) => {
       profilePicture: user.profilePicture || "",
     });
   } catch (error) {
-    console.log(error);
+   console.error("login:", error);
     res.status(500).json({
-      message: "Internal Server Error",
+      success: false,
+      message: "Server error login-in",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -372,9 +492,11 @@ export const refreshToken = async (req, res) => {
       accessToken: newAcessToken,
     });
   } catch (error) {
-    console.log(error);
+     console.error("refrestoken error:", error);
     res.status(500).json({
-      message: "Internal Server Error",
+      success: false,
+      message: "refresh token error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -386,9 +508,11 @@ export const logout = async (req, res) => {
       message: "Logged Out",
     });
   } catch (error) {
-    console.log(error);
+     console.error("logout error:", error);
     res.status(500).json({
-      message: "Internal Server Error",
+      success: false,
+      message: "logout error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -510,9 +634,11 @@ export const forgotPassword = async (req, res) => {
       message: "Reset link sent",
     });
   } catch (error) {
-    console.log(error);
+    console.error("forgot password error:", error);
     res.status(500).json({
-      message: "Internal Server Error",
+      success: false,
+      message: "forgot password error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -537,15 +663,14 @@ export const resetPassword = async (req, res) => {
       message: "Password reset successful",
     });
   } catch (error) {
-    console.log(error);
+     console.error("resend password error:", error);
     res.status(500).json({
-      message: "Internal Server Error",
+      success: false,
+      message: "resend password error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
-
-
-
 
 //
 
