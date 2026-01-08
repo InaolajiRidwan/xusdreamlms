@@ -14,11 +14,11 @@ import {
 // import { verifyToken } from "../middleware/authMiddleware.js";
 // import { upload } from "../middleware/multer.js";
 
-const router = express.Router();
+const router = express.Router();  
 
 router.post("/sign-up", register);
-router.get("/verify-email/:token", verifyEmail);
 router.post("/resend-verification", resendVerification);
+router.get("/verify-email/:token", verifyEmail);
 router.post("/login", login);
 router.post("/refresh-token", refreshToken);
 router.post("/logout", logout);

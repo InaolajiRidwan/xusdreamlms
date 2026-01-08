@@ -100,9 +100,25 @@ export const updatePassword = async (req, res) => {
   }
 };
 
+
+
 //admin
 
 export const getAllUsers = async (req, res) => {
+
+
+  // BACKEND PAGINATION
+  // const page = parseInt(req.query.page) || 1;
+  // const limit = parseInt(req.query.limit) || 10
+  // const skip = (page - 1) * limit 
+  // const totalCount = await User.countDocuments()
+  // const users = await User.find().skip(skip).limit(limit).select("-password")
+
+  // res.status(200).json({
+  //   users,
+  //   totalCount,
+  //   totalPages: Math.ceil(total/limit), currentPage: page
+  // })
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -134,7 +150,10 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-export const getOneUser = async (req, res) => {
+
+
+
+export const getProfile = async (req, res) => {
   try {
     const { id } = req.params;
     if (!req.user) {
@@ -174,6 +193,10 @@ export const getOneUser = async (req, res) => {
     });
   }
 };
+
+
+
+
 
 export const updateUser = async (req, res) => {
   try {
@@ -242,11 +265,7 @@ export const deleteUser = async (req, res) => {
 
     const user = await User.findById(id);
 
-    const deletedUser = await User.findByIdAndDelete(id, {
-      isActive: false,
-      deletedAt: new Date(),
-      email: `${user.email}_deleted_${Date.now()}`,
-    });
+    const deletedUser = await User.findByIdAndDelete(id);
 
     if (!deletedUser) {
       return res.status(404).json({

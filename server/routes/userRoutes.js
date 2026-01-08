@@ -3,7 +3,7 @@ import {
   deleteUser,
   getAllUsers,
   getMe,
-  getOneUser,
+  getProfile,
   updateMe,
   updatePassword,
   updateUser,
@@ -17,7 +17,8 @@ const router = express.Router();
 // 2️⃣ Define a GET route at /me
 
 //student
-router.get("/me", verifyToken, authorizeRole("admin", "student"), getMe);
+router.get("/me", verifyToken, getMe);
+
 router.patch(
   "/me/update-me",
   verifyToken,
@@ -30,7 +31,7 @@ router.patch("/me/update-password", verifyToken, updatePassword);
 
 //admin
 router.get("/all-users", verifyToken, authorizeRole("admin"), getAllUsers);
-router.get("/one-user/:id", verifyToken, authorizeRole("admin"), getOneUser)
+router.get("/one-user/:id", verifyToken, authorizeRole("admin"), getProfile)
 router.put("/update-user/:id", verifyToken, authorizeRole("admin"), updateUser)
 router.delete("/delete-user/:id", verifyToken, authorizeRole("admin"), deleteUser)
 

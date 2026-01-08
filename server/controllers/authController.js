@@ -3,9 +3,7 @@ import bcrypt from "bcryptjs";
 import validator from "validator";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import fs from "fs";
 import { createTransporter } from "../config/mail.js";
-import { generateAccessToken, generateRefreshToken } from "../utils/token.js";
 
 const transporter = createTransporter();
 
@@ -51,7 +49,7 @@ export const register = async (req, res) => {
 
     await newUser.save();
 
-    const link = `${process.env.CLIENT_URL}/verify-email/${emailToken}`;
+    const link = `${process.env.CLIENT_URL}/verify-email/?token=${emailToken}`;
 
     await transporter.sendMail({
       to: email,
@@ -139,11 +137,6 @@ export const register = async (req, res) => {
   `,
     });
 
-
-
-
-
-
     res.status(201).json({
       message: "user register successfully & verification email sent",
       user: {
@@ -164,52 +157,6 @@ export const register = async (req, res) => {
   }
 };
 
-
-
-
-
-
-export const verifyEmail = async (req, res) => {
-  try {
-    const { token } = req.params;
-    const user = await User.findOne({
-      emailVerificationToken: token,
-      emailVerificationExpires: { $gt: Date.now() },
-    });
-
-    if (!user) {
-      return res.status(400).json({
-        message: "Invalid Token",
-      });
-    }
-
-    user.isEmailVerified = true;
-    user.emailVerificationToken = null;
-
-    await user.save();
-
-    res.json({
-      message: "Email verified",
-    });
-  } catch (error) {
-    console.error("verify email error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error sending verify email",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
-  }
-};
-
-
-
-
-
-
-
-
-
-
 export const resendVerification = async (req, res) => {
   try {
     const { email } = req.body;
@@ -220,8 +167,8 @@ export const resendVerification = async (req, res) => {
       });
     }
 
-
     const token = crypto.randomBytes(32).toString("hex");
+
     user.emailVerificationToken = token;
     user.emailVerificationExpires = Date.now() + 3600000;
     await user.save();
@@ -326,10 +273,36 @@ export const resendVerification = async (req, res) => {
   }
 };
 
+export const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
 
+    const user = await User.findOne({
+      emailVerificationToken: token,
+      emailVerificationExpires: { $gt: Date.now() },
+    });
 
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
 
+    // Optional: prevent re-verification
+    if (user.isEmailVerified) {
+      return res.status(400).json({ message: "Email already verified" });
+    }
 
+    user.isEmailVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerificationExpires = null;
+
+    await user.save();
+
+    res.status(200).json({ message: "Email verified" });
+  } catch (error) {
+    console.error("verifyEmail error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 export const login = async (req, res) => {
   try {
@@ -366,8 +339,20 @@ export const login = async (req, res) => {
       });
     }
 
-    const accessToken = generateAccessToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
+    const accessToken = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_ACCESS_SECRET,
+      {
+        expiresIn: process.env.JWT_ACCESS_EXPIRES,
+      }
+    );
+    const refreshToken = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_REFRESH_SECRET,
+      {
+        expiresIn: process.env.JWT_REFRESH_EXPIRES,
+      }
+    );
 
     user.refreshToken = refreshToken;
 
@@ -375,8 +360,8 @@ export const login = async (req, res) => {
 
     await transporter.sendMail({
       to: user.email,
-      subject: "you're successfully logged in", 
-     html: `
+      subject: "you're successfully logged in",
+      html: `
         <!DOCTYPE html>
           <html lang="en">
           <head>
@@ -451,26 +436,27 @@ export const login = async (req, res) => {
   </body>
   </html>
   `,
-    })
+    });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // HTTPS only in prod
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     res.status(200).json({
       message: `Welcome back ${user.fullName}`,
       accessToken,
-      id: user._id,
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role,
-      profilePicture: user.profilePicture || "",
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        profilePicture: user.profilePicture || "",
+      },
     });
   } catch (error) {
-   console.error("login:", error);
+    console.error("login:", error);
     res.status(500).json({
       success: false,
       message: "Server error login-in",
@@ -482,20 +468,40 @@ export const login = async (req, res) => {
 export const refreshToken = async (req, res) => {
   try {
     const token = req.cookies.refreshToken;
-    if (!token) return res.sendStatus(401);
+    if (!token) {
+      return res.status(401).json({
+        message: "No refresh token provided",
+      });
+    }
 
-    const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-    const user = await User.findById(payload.userId);
-    if (!user || user.refreshToken !== token) return res.sendStatus(403);
-    const newAcessToken = generateAccessToken(user._id);
-    res.json({
+    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+
+    const user = await User.findById(decoded.id);
+
+    if (!user || user.refreshToken !== token) {
+      return res.status(403).json({
+        message: "Invalid session. Access denied.",
+      });
+    }
+    const newAcessToken = jwt.sign({id: user._id, role: user.role}, process.env.JWT_ACCESS_SECRET, {
+      expiresIn: process.env.JWT_ACCESS_EXPIRES
+    });
+
+    res.status(200).json({
+      message: "success",
       accessToken: newAcessToken,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch (error) {
-     console.error("refrestoken error:", error);
+    console.error("refrestoken error:", error);
     res.status(500).json({
       success: false,
-      message: "refresh token error",
+      message: "refresh token server error",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
@@ -503,12 +509,17 @@ export const refreshToken = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
-    res.clearCookie("refreshToken");
-    res.json({
-      message: "Logged Out",
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.status(200).json({
+      message: "Logged out successfully",
     });
   } catch (error) {
-     console.error("logout error:", error);
+    console.error("logout error:", error);
     res.status(500).json({
       success: false,
       message: "logout error",
@@ -663,7 +674,7 @@ export const resetPassword = async (req, res) => {
       message: "Password reset successful",
     });
   } catch (error) {
-     console.error("resend password error:", error);
+    console.error("resend password error:", error);
     res.status(500).json({
       success: false,
       message: "resend password error",

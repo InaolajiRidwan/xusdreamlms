@@ -13,9 +13,20 @@ import chapterRoutes from "./routes/chapterRoutes.js";
 
 const app = express();
 
+//enable express to automatically pass incoming json data in req.body
 app.use(express.json());
-app.use(cors());
-app.use(cookieParser());
+
+// app.use(cors());
+// to enable cross origin resource sharing
+app.use(cors({
+  origin: 'http://localhost:5173', // Your Frontend URL
+  credentials: true,               // Allow cookies (Refresh Token) --- for sending cookies fron frontend to backend
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+
+app.use(cookieParser()); 
 
 // 1. DEFINE ROUTES FIRST
 app.use("/api/v1/auth", authRoutes);

@@ -35,6 +35,7 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     if (password.length < 6) {
       toast.error("Password must be at least 6 characters long!");
       return;
@@ -70,7 +71,7 @@ const Signup = () => {
     setIsLoading(true);
     try {
       await axios.post(
-        "http://localhost:8080/api/v1/auth/resend-verification",
+        "http://localhost:8080/api/v1/auth/resend-verification", 
         { email }
       );
       toast.success("Verification email has been resent!", {
@@ -170,6 +171,7 @@ const Signup = () => {
         <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
           <img
             src={studentImg}
+          
             alt="Students with laptop"
             className="w-full h-full object-cover"
           />
