@@ -20,7 +20,7 @@ const router = express.Router();
 router.get("/me", verifyToken, getMe);
 
 router.patch(
-  "/me/update-me",
+  "/me/update",
   verifyToken,
   authorizeRole("admin", "student"),
   upload.single("profilePicture"),

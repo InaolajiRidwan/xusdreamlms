@@ -52,6 +52,9 @@ import fs from "fs";
 //   }
 // };
 
+
+
+
 export const createCourse = async (req, res) => {
   try {
     const { title, description, price, isPublished } = req.body;

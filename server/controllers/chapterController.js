@@ -18,6 +18,7 @@ export const createChapter = async (req, res) => {
       order,
       course: courseId,
     });
+    
     await newChapter.save();
     await Course.findByIdAndUpdate(courseId, {
       $push: { chapters: newChapter._id },
@@ -33,6 +34,9 @@ export const createChapter = async (req, res) => {
     });
   }
 };
+
+
+
 
 export const getAllChapter = async (req, res) => {
   try {

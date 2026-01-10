@@ -8,7 +8,7 @@ const transport = createTransporter();
 
 export const getMe = async (req, res) => {
   try {
-    const { fullName, email, profilePicture } = req.user;
+    const { fullName, email, profilePicture, role } = req.user;
 
     res.status(200).json({
       message: "successful",
@@ -16,6 +16,7 @@ export const getMe = async (req, res) => {
         fullName,
         email,
         profilePicture,
+        role
       },
     });
   } catch (error) {
@@ -58,7 +59,7 @@ export const updateMe = async (req, res) => {
 
 export const updatePassword = async (req, res) => {
   try {
-    const user = req.user; // ✅ FIXED
+    const user = req.user; 
     const { currentPassword, newPassword } = req.body;
 
     if (!currentPassword || !newPassword) {
@@ -68,6 +69,7 @@ export const updatePassword = async (req, res) => {
     }
 
     const isMatch = await bcrypt.compare(currentPassword, user.password);
+
     if (!isMatch) {
       return res.status(400).json({
         message: "Current password is incorrect",

@@ -1,17 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import {
-  FaEyeSlash,
-  FaEye,
-  FaUser,
-  FaEnvelope,
-  FaLock,
-} from "react-icons/fa";
+import { FaEyeSlash, FaEye, FaUser, FaEnvelope, FaLock } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import studentImg from "../assets/students-with-laptop-medium-shot.jpg";
-
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -35,18 +28,22 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (password.length < 6) {
       toast.error("Password must be at least 6 characters long!");
       return;
     }
     setIsLoading(true);
     try {
-      await axios.post("http://localhost:8080/api/v1/auth/sign-up", {
-        fullName,
-        email,
-        password,
-      });
+      await axios.post(
+        "/api/v1/auth/sign-up",
+        {
+          fullName,
+          email,
+          password,
+        },
+        { withCredentials: true }
+      );
       toast.success(
         <div>
           <div className="font-bold">Account created successfully!</div>
@@ -71,7 +68,7 @@ const Signup = () => {
     setIsLoading(true);
     try {
       await axios.post(
-        "http://localhost:8080/api/v1/auth/resend-verification", 
+        "http://localhost:8080/api/v1/auth/resend-verification",
         { email }
       );
       toast.success("Verification email has been resent!", {
@@ -171,14 +168,16 @@ const Signup = () => {
         <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
           <img
             src={studentImg}
-          
             alt="Students with laptop"
             className="w-full h-full object-cover"
           />
-         
+
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
             <div className="text-center text-white p-8">
-              <h2 className="text-5xl font-bold mb-6">XUSDIGITAL <span className="text-red-500 underline">DreamLms</span></h2>
+              <h2 className="text-5xl font-bold mb-6">
+                XUSDIGITAL{" "}
+                <span className="text-red-500 underline">DreamLms</span>
+              </h2>
               <p className="text-2xl">
                 Transform Your Future Through Education
               </p>
@@ -186,12 +185,12 @@ const Signup = () => {
           </div>
         </div>
 
-    
         <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
           <div className="w-full max-w-md">
             <div className="text-center lg:text-left mb-10">
               <h1 className="text-3xl font-bold text-gray-800 text-center">
-                XUSDIGITAL <span className="text-red-500 underline">DreamLms</span>
+                XUSDIGITAL{" "}
+                <span className="text-red-500 underline">DreamLms</span>
               </h1>
               <h2 className="mt-4 text-3xl font-bold text-gray-900 text-center">
                 Get Started

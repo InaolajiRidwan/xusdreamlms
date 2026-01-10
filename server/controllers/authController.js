@@ -442,6 +442,7 @@ export const login = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // HTTPS only in prod
       sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({
@@ -483,9 +484,13 @@ export const refreshToken = async (req, res) => {
         message: "Invalid session. Access denied.",
       });
     }
-    const newAcessToken = jwt.sign({id: user._id, role: user.role}, process.env.JWT_ACCESS_SECRET, {
-      expiresIn: process.env.JWT_ACCESS_EXPIRES
-    });
+    const newAcessToken = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_ACCESS_SECRET,
+      {
+        expiresIn: process.env.JWT_ACCESS_EXPIRES,
+      }
+    );
 
     res.status(200).json({
       message: "success",
@@ -513,6 +518,7 @@ export const logout = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
     res.status(200).json({
@@ -531,6 +537,7 @@ export const logout = async (req, res) => {
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
+    console.log(email)
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(200).json({
