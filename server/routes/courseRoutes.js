@@ -3,7 +3,7 @@ import { verifyToken } from "../middleware/authMiddleware.js"; //
 import { authorizeRole } from "../middleware/roleMiddleware.js"; //
 import {
   createCourse,
-  deleteCourse,
+  deleteCourseWithChapters,
   getAllCourse,
   getOneCourse,
   updateCourse,
@@ -52,6 +52,7 @@ router.patch(
 
 router.post(
   "/update-course-media",
+  verifyToken,
   authorizeRole("admin"),
   uploadCourseThumbnail
 );
@@ -61,7 +62,7 @@ router.delete(
   "/delete-course/:id",
   verifyToken,
   authorizeRole("admin"),
-  deleteCourse
+  deleteCourseWithChapters
 );
 
 export default router;

@@ -6,8 +6,9 @@ import cors from "cors";
 import connectDb from "./config/db.js";
 import courseRoutes from "./routes/courseRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
-import userRoutes from "./routes/userRoutes.js"
+import userRoutes from "./routes/userRoutes.js";
 import chapterRoutes from "./routes/chapterRoutes.js";
+import lessonRoute from "./routes/lessonRoute.js";
 
 // ... imports ...
 
@@ -18,22 +19,23 @@ app.use(express.json());
 
 // app.use(cors());
 // to enable cross origin resource sharing
-app.use(cors({
-  origin: 'http://localhost:5173', // Your Frontend URL
-  credentials: true,               // Allow cookies (Refresh Token) --- for sending cookies fron frontend to backend
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: "http://localhost:5173", // Your Frontend URL
+    credentials: true, // Allow cookies (Refresh Token) --- for sending cookies fron frontend to backend
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
-
-app.use(cookieParser()); 
+app.use(cookieParser());
 
 // 1. DEFINE ROUTES FIRST
 app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/users", userRoutes)
+app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/courses", courseRoutes);
 app.use("/api/v1/chapter", chapterRoutes);
-
+app.use("/api/v1/lesson", lessonRoute);
 
 // 2. START SERVER LAST
 const PORT = process.env.PORT || 5000;

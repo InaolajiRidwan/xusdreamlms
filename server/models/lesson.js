@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose"
 
 const LessonSchema = new mongoose.Schema(
   {
@@ -19,4 +19,6 @@ const LessonSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Lesson", LessonSchema);
+const Lesson =  mongoose.model("Lesson", LessonSchema);
+
+export default Lesson

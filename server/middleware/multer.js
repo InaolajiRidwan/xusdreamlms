@@ -4,13 +4,15 @@ import path from "path";
 // 1. Set storage engine (Where to save files temporarily)
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/"); // Make sure this folder exists!
+    cb(null, "uploads/"); 
   },
   filename: function (req, file, cb) {
-    // Save file with a unique name: timestamp + original name
     cb(null, Date.now() + path.extname(file.originalname));
   }
 });
+
+
+
 
 // 2. File filter (Optional: Only allow images and videos)
 const fileFilter = (req, file, cb) => {

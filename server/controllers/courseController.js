@@ -1,5 +1,6 @@
 import cloudinary from "../config/cloudinary.js";
 import Course from "../models/course.js";
+import Chapter from "../models/chapter.js"
 import fs from "fs";
 
 export const createCourse = async (req, res) => {
@@ -185,40 +186,43 @@ export const getOneCourse = async (req, res) => {
   }
 };
 
-export const deleteCourse = async (req, res) => {
-  try {
-    // 1. Get ID from URL instead of body
-    const { id } = req.params;
+// export const deleteCourse = async (req, res) => {
+//   try {
+//     // 1. Get ID from URL instead of body
+//     const { id } = req.params;
 
-    const coursedeleted = await Course.findByIdAndDelete(id);
+//     const coursedeleted = await Course.findByIdAndDelete(id);
 
-    if (!coursedeleted) {
-      return res.status(404).json({
-        success: false,
-        message: "Course not found.",
-      });
-    }
+//     if (!coursedeleted) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Course not found.",
+//       });
+//     }
 
-    res.status(200).json({
-      success: true,
-      message: "Course successfully deleted",
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-      error: error.message,
-    });
-  }
-};
+//     res.status(200).json({
+//       success: true,
+//       message: "Course successfully deleted",
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: "Server Error",
+//       error: error.message,
+//     });
+//   }
+// };
 
-// PATCH /:id - Update course info
+//! PATCH /:id - Update course info
 export const updateCourse = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // We use { new: true } to return the updated document
-    // We use runValidators to ensure the new data follows schema rules
+    // ?We use { new: true } to return the updated document
+    //? We use runValidators to ensure the new data follows schema rules
+
+
+    
     const updatedCourse = await Course.findByIdAndUpdate(
       id,
       { $set: req.body },
@@ -267,5 +271,35 @@ export const uploadCourseThumbnail = async (req, res) => {
     res.status(200).json({ success: true, course });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+
+
+
+
+//!  DELETE course and all its chapters
+
+export const deleteCourseWithChapters = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find and delete the course
+    const course = await Course.findByIdAndDelete(id);
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    // Delete all chapters belonging to this course
+    await Chapter.deleteMany({ course: id });
+
+    res.status(200).json({
+      success: true,
+      message: "Course and its chapters deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete Course with Chapters Error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };

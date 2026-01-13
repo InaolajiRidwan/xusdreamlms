@@ -4,6 +4,8 @@ import {
   createChapter,
   getChapterByCourse,
   getAllChapters,
+  updateChapter,
+  deleteChapter,
 } from "../controllers/chapterController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 import { authorizeRole } from "../middleware/roleMiddleware.js";
@@ -31,6 +33,25 @@ router.get(
   getSingleChapter
 );
 
-router.get("/get-all-chapters", verifyToken, authorizeRole("admin", "users"), getAllChapters)
+router.get(
+  "/get-all-chapters",
+  verifyToken,
+  authorizeRole("admin", "users"),
+  getAllChapters
+);
+
+router.put(
+  "/update-chapter/:chapterId",
+  verifyToken,
+  authorizeRole("admin"),
+  updateChapter
+);
+
+router.delete(
+  "/delete-chapter/:chapterId",
+  verifyToken,
+  authorizeRole("admin"),
+  deleteChapter
+);
 
 export default router;
