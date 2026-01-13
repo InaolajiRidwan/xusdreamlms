@@ -1,14 +1,36 @@
 import express from "express";
 import {
+  getSingleChapter,
   createChapter,
-  getAllChapter,
+  getChapterByCourse,
+  getAllChapters,
 } from "../controllers/chapterController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 import { authorizeRole } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-router.post("/create-chapter/:courseId", createChapter);
-router.get("/get-all-chapter", getAllChapter);
+router.post(
+  "/create-chapter/:courseId",
+  verifyToken,
+  authorizeRole("admin"),
+  createChapter
+);
+
+router.get(
+  "/get-chapter-by-course/:courseId/chapters",
+  verifyToken,
+  authorizeRole("admin"),
+  getChapterByCourse
+);
+
+router.get(
+  "/get-single-chapter/:chapterId",
+  verifyToken,
+  authorizeRole("admin"),
+  getSingleChapter
+);
+
+router.get("/get-all-chapters", verifyToken, authorizeRole("admin", "users"), getAllChapters)
 
 export default router;

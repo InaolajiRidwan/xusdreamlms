@@ -2,63 +2,10 @@ import cloudinary from "../config/cloudinary.js";
 import Course from "../models/course.js";
 import fs from "fs";
 
-
-
-
-// export const createCourse = async (req, res) => {
-//   try {
-//     const { title, description, price } = req.body;
-//     if (!title || !description || !price) {
-//       return res.status(400).json({
-//         message: "All field is required",
-//       });
-//     }
-
-//     if (req.user.role !== "admin") {
-//       return res.status(403).json({
-//         message: "Only admins can create courses",
-//       });
-//     }
-
-//     let thumbnailUrl = "";
-
-//     // 1. Handle Thumbnail Upload (Image)
-//     if (req.files && req.files.image) {
-//       const imageFile = req.files.image[0];
-//       const imageResult = await cloudinary.uploader.upload(imageFile.path, {
-//         folder: "lms/courses/thumbnails",
-//       });
-//       thumbnailUrl = imageResult.secure_url;
-//       fs.unlinkSync(imageFile.path); // Clean up
-//     }
-
-//     const newCourse = new Course({
-//       title,
-//       description,
-//       price,
-//       thumbnail: thumbnailUrl,
-//       isPublished: true,
-//     });
-
-//     await newCourse.save();
-//     res.status(201).json({ message: "Course created successfully", newCourse });
-//   } catch (error) {
-//     console.error("Create course error:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Server error creating course",
-//       error: process.env.NODE_ENV === "development" ? error.message : undefined,
-//     });
-//   }
-// };
-
-
-
-
 export const createCourse = async (req, res) => {
   try {
     const { title, description, price, isPublished } = req.body;
-    
+
     // 1. Validation
     if (!title || !description || price === undefined) {
       return res.status(400).json({
@@ -85,10 +32,10 @@ export const createCourse = async (req, res) => {
     }
 
     // 3. Check for duplicate course title
-    const existingCourse = await Course.findOne({ 
-      title: { $regex: new RegExp(`^${title}$`, 'i') } 
+    const existingCourse = await Course.findOne({
+      title: { $regex: new RegExp(`^${title}$`, "i") },
     });
-    
+
     if (existingCourse) {
       return res.status(400).json({
         success: false,
@@ -102,9 +49,14 @@ export const createCourse = async (req, res) => {
     if (req.files && req.files.image) {
       try {
         const imageFile = req.files.image[0];
-        
+
         // Validate file type
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+        const allowedTypes = [
+          "image/jpeg",
+          "image/png",
+          "image/webp",
+          "image/jpg",
+        ];
         if (!allowedTypes.includes(imageFile.mimetype)) {
           return res.status(400).json({
             success: false,
@@ -126,17 +78,16 @@ export const createCourse = async (req, res) => {
           folder: "lms/courses/thumbnails",
           transformation: [
             { width: 800, height: 450, crop: "fill" },
-            { quality: "auto" }
-          ]
+            { quality: "auto" },
+          ],
         });
-        
+
         thumbnailUrl = imageResult.secure_url;
-        
+
         // Clean up temp file
         fs.unlink(imageFile.path, (err) => {
           if (err) console.error("Error deleting temp file:", err);
         });
-        
       } catch (uploadError) {
         console.error("Cloudinary upload error:", uploadError);
         return res.status(500).json({
@@ -153,7 +104,6 @@ export const createCourse = async (req, res) => {
       price: priceNum,
       thumbnail: thumbnailUrl,
       isPublished: true, // Convert to boolean
-     
     });
 
     await newCourse.save();
@@ -169,19 +119,18 @@ export const createCourse = async (req, res) => {
         price: newCourse.price,
         thumbnail: newCourse.thumbnail,
         isPublished: newCourse.isPublished,
-        createdAt: newCourse.createdAt
-      }
+        createdAt: newCourse.createdAt,
+      },
     });
-
   } catch (error) {
     console.error("Create course error:", error);
-    
+
     // Handle specific errors
-    if (error.name === 'ValidationError') {
+    if (error.name === "ValidationError") {
       return res.status(400).json({
         success: false,
         message: "Validation error",
-        errors: Object.values(error.errors).map(err => err.message)
+        errors: Object.values(error.errors).map((err) => err.message),
       });
     }
 
@@ -192,16 +141,6 @@ export const createCourse = async (req, res) => {
     });
   }
 };
-
-
-
-
-
-
-
-
-
-
 
 export const getAllCourse = async (req, res) => {
   try {
@@ -223,9 +162,6 @@ export const getAllCourse = async (req, res) => {
     });
   }
 };
-
-
-
 
 export const getOneCourse = async (req, res) => {
   try {

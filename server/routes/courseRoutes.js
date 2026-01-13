@@ -36,13 +36,6 @@ router.get(
 );
 
 
-
-
-
-
-
-
-
 router.get(
   "/one-course/:id",
   verifyToken,
@@ -62,6 +55,7 @@ router.post(
   authorizeRole("admin"),
   uploadCourseThumbnail
 );
+
 
 router.delete(
   "/delete-course/:id",

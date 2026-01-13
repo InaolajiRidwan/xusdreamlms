@@ -1,6 +1,7 @@
 import Chapter from "../models/chapter.js";
 import Course from "../models/course.js";
 
+//! create a chapters
 export const createChapter = async (req, res) => {
   try {
     const { title, description, order } = req.body;
@@ -18,7 +19,7 @@ export const createChapter = async (req, res) => {
       order,
       course: courseId,
     });
-    
+
     await newChapter.save();
     await Course.findByIdAndUpdate(courseId, {
       $push: { chapters: newChapter._id },
@@ -35,21 +36,22 @@ export const createChapter = async (req, res) => {
   }
 };
 
-
-
-
-export const getAllChapter = async (req, res) => {
+//! get all chapter in a course
+export const getChapterByCourse = async (req, res) => {
   try {
-    const getChapter = await Chapter.find();
-    if (getChapter.length === 0) {
+    const { courseId } = req.params;
+
+    const chapters = await Chapter.find({ course: courseId });
+    if (chapters.length === 0) {
       return res.status(400).json({
-        message: "No chapter available",
+        message: "No chapter available for this course",
       });
     }
     res.status(200).json({
       message: "success",
-      getChapter,
-    })
+      count: chapters.length,
+      data: chapters,
+    });
   } catch (error) {
     console.log(`Registration Error ${error}`);
     res.status(500).json({
@@ -58,11 +60,49 @@ export const getAllChapter = async (req, res) => {
   }
 };
 
+//! get single chapter
+export const getSingleChapter = async (req, res) => {
+  try {
+    const { chapterId } = req.params;
+    const chapter = await Chapter.findById(chapterId);
+    if (!chapter) {
+      return res.status(404).json({
+        message: "course not found",
+      });
+    }
+    res.status(200).json({
+      message: "chapter retrieved successfully",
+      chapter,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server Error: Unable to fetch courses",
+      error: error.message,
+    });
+  }
+};
 
-// export const deleteChapter = async(req,res)=>{
-//   try {
-//     const 
-//   } catch (error) {
-    
-//   }
-// }
+//! get-all-chapters
+
+export const getAllChapters = async (req, res) => {
+  try {
+    const chapters = await Chapter.find();
+    if (chapters.length === 0) {
+      return res.status(404).json({
+        message: "No chapters available",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      count: chapters.length,
+      data: chapters,
+    });
+  } catch (error) {
+    console.error("Get All Chapters Error:", error);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
+};
